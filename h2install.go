@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// ===== Global variables =====
+// ===== Package List =====
 var packages = []string{
 	"hyprland",
 	"uwsm",
@@ -69,27 +69,33 @@ var packages = []string{
 	"firefox",
 }
 
-// ===== Utility functions =====
-func runCommand(name string, args ...string) error {
+// ===== Utility =====
+func runCommand(dryRun bool, name string, args ...string) error {
+	fmt.Printf(">> %s %s\n", name, strings.Join(args, " "))
+	if dryRun {
+		return nil
+	}
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func copyFile(src, dst string) error {
+func copyFile(src, dst string, dryRun bool) error {
+	if dryRun {
+		fmt.Printf("Would copy %s → %s\n", src, dst)
+		return nil
+	}
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
-
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-
 	if _, err = io.Copy(out, in); err != nil {
 		return err
 	}
@@ -104,13 +110,13 @@ func fileExists(path string) bool {
 // ===== Banner =====
 func printBanner(msg string) {
 	if _, err := exec.LookPath("figlet"); err == nil {
-		runCommand("figlet", "-f", "smslant", msg)
+		runCommand(false, "figlet", "-f", "smslant", msg)
 	} else {
 		fmt.Printf("=== %s ===\n", msg)
 	}
 }
 
-// ===== Prompt =====
+// ===== Prompts =====
 func promptYesNo(msg string) bool {
 	fmt.Printf("%s (y/n): ", msg)
 	reader := bufio.NewReader(os.Stdin)
@@ -137,86 +143,81 @@ func promptChoice(msg string, choices []string) string {
 	}
 }
 
-// ===== .bashrc handling =====
-func backupAndReplaceBashrc(homeDir, newBashrcPath string, force bool) error {
-	bashrc := filepath.Join(homeDir, ".bashrc")
-
+// ===== Bashrc =====
+func backupAndReplaceBashrc(home, newBashrc string, force, dryRun bool) error {
+	bashrc := filepath.Join(home, ".bashrc")
 	if fileExists(bashrc) {
-		backupName := fmt.Sprintf(".bashrc.bak.%s", time.Now().Format("20060102-150405"))
-		backupPath := filepath.Join(homeDir, backupName)
-
-		if err := copyFile(bashrc, backupPath); err != nil {
-			return fmt.Errorf("failed to backup .bashrc: %w", err)
+		backup := filepath.Join(home, fmt.Sprintf(".bashrc.bak.%s", time.Now().Format("20060102-150405")))
+		if err := copyFile(bashrc, backup, dryRun); err != nil {
+			return fmt.Errorf("backup failed: %w", err)
 		}
-		fmt.Printf(";; Backed up existing .bashrc to %s\n", backupPath)
-
+		fmt.Printf(";; Backed up existing .bashrc to %s\n", backup)
 		if !force {
 			fmt.Println(";; Skipping replacement (use --force to overwrite).")
 			return nil
 		}
 	}
-
-	if err := copyFile(newBashrcPath, bashrc); err != nil {
-		return fmt.Errorf("failed to copy new .bashrc: %w", err)
+	if !fileExists(newBashrc) {
+		fmt.Println(";; No new .bashrc found, skipping.")
+		return nil
+	}
+	if err := copyFile(newBashrc, bashrc, dryRun); err != nil {
+		return fmt.Errorf("install failed: %w", err)
 	}
 	fmt.Println(";; Installed new .bashrc successfully.")
 	return nil
 }
 
 // ===== Wallpapers =====
-func installWallpaper(repoURL, dest string, dryRun bool) error {
+func installWallpaper(repoURL, dest string, force, dryRun bool) error {
 	fmt.Println(";; Installing wallpapers...")
-	if dryRun {
-		fmt.Printf("Would clone %s into %s\n", repoURL, dest)
-		return nil
-	}
 	if fileExists(dest) {
-		if err := os.RemoveAll(dest); err != nil {
-			return fmt.Errorf("failed to remove old wallpaper dir: %w", err)
+		if !force {
+			fmt.Printf(";; Wallpaper dir exists (%s), skipping.\n", dest)
+			return nil
+		}
+		if dryRun {
+			fmt.Printf("Would remove existing wallpaper dir %s\n", dest)
+		} else {
+			os.RemoveAll(dest)
 		}
 	}
-	return runCommand("git", "clone", repoURL, dest)
+	return runCommand(dryRun, "git", "clone", "--depth=1", repoURL, dest)
 }
 
 // ===== AUR Helper + Packages =====
 func installPackages(helper string, dryRun bool) error {
 	home, _ := os.UserHomeDir()
 	helperRepo := fmt.Sprintf("https://aur.archlinux.org/%s-bin.git", helper)
-	helperDir := filepath.Join(home, helper+"-bin")
-
+	helperDir := filepath.Join(home, ".cache", "aur", helper+"-bin")
 	if dryRun {
 		fmt.Printf("Would install AUR helper %s and packages: %v\n", helper, packages)
 		return nil
 	}
-
-	if err := runCommand("git", "clone", helperRepo); err != nil {
-		return fmt.Errorf("failed to clone %s: %w", helper, err)
+	os.MkdirAll(filepath.Dir(helperDir), 0755)
+	if err := runCommand(false, "git", "clone", "--depth=1", helperRepo, helperDir); err != nil {
+		return err
 	}
+	defer os.RemoveAll(helperDir)
 	if err := os.Chdir(helperDir); err != nil {
-		return fmt.Errorf("failed to cd into %s: %w", helperDir, err)
+		return err
 	}
-	if err := runCommand("makepkg", "-si", "--noconfirm"); err != nil {
-		return fmt.Errorf("failed to build %s: %w", helper, err)
+	if err := runCommand(false, "makepkg", "-si", "--noconfirm"); err != nil {
+		return err
 	}
-	if err := runCommand(helper, append([]string{"-S", "--needed", "--noconfirm"}, packages...)...); err != nil {
-		return fmt.Errorf("failed to install packages: %w", err)
-	}
-	if err := os.RemoveAll(helperDir); err == nil {
-		fmt.Printf(";; Removed %s\n", helperDir)
-	}
-	return nil
+	return runCommand(false, helper, append([]string{"-S", "--needed", "--noconfirm"}, packages...)...)
 }
 
 // ===== Symlinks =====
-func createSymlinks(home string, force bool, dryRun bool) {
+func createSymlinks(home string, force, dryRun bool) {
 	links := map[string]string{
-		"~/dotfiles/gtk/.Xresources":        "~/.Xresources",
-		"~/dotfiles/alacritty":              "~/.config/alacritty",
-		"~/dotfiles/dunst":                  "~/.config/dunst",
-		"~/dotfiles/gtk":                    "~/.config/gtk",
-		"~/dotfiles/hypr":                   "~/.config/hypr",
-		"~/dotfiles/nvim":                   "~/.config/nvim",
-		"~/dotfiles/rofi":                   "~/.config/rofi",
+		"~/dotfiles/gtk/.Xresources": "~/Xresources",
+		"~/dotfiles/alacritty":       "~/.config/alacritty",
+		"~/dotfiles/dunst":           "~/.config/dunst",
+		"~/dotfiles/gtk":             "~/.config/gtk",
+		"~/dotfiles/hypr":            "~/.config/hypr",
+		"~/dotfiles/nvim":            "~/.config/nvim",
+		"~/dotfiles/rofi":            "~/.config/rofi",
 		"~/dotfiles/starship/starship.toml": "~/.config/starship.toml",
 		"~/dotfiles/swappy":                 "~/.config/swappy",
 		"~/dotfiles/vim":                    "~/.config/vim",
@@ -229,21 +230,22 @@ func createSymlinks(home string, force bool, dryRun bool) {
 		"~/dotfiles/waypaper":               "~/.config/waypaper",
 		"~/dotfiles/uwsm":                   "~/.config/uwsm",
 	}
-
 	for src, dst := range links {
 		srcPath := strings.Replace(src, "~", home, 1)
 		dstPath := strings.Replace(dst, "~", home, 1)
-
 		if dryRun {
 			fmt.Printf("Would link %s → %s\n", srcPath, dstPath)
 			continue
 		}
-
-		if fileExists(dstPath) && force {
-			os.Remove(dstPath)
+		if fileExists(dstPath) {
+			if !force {
+				fmt.Printf(";; Skipping %s (exists)\n", dstPath)
+				continue
+			}
+			os.RemoveAll(dstPath)
 		}
 		if err := os.Symlink(srcPath, dstPath); err != nil {
-			fmt.Printf(";; Failed to link %s → %s: %v\n", srcPath, dstPath, err)
+			fmt.Printf(";; Failed %s → %s: %v\n", srcPath, dstPath, err)
 		} else {
 			fmt.Printf(";; Linked %s → %s\n", srcPath, dstPath)
 		}
@@ -251,23 +253,22 @@ func createSymlinks(home string, force bool, dryRun bool) {
 }
 
 // ===== Cleanup =====
-func cleanup(home string, skip bool, dryRun bool) {
+func cleanup(home string, skip, dryRun bool) {
 	hyprarchDir := filepath.Join(home, "Downloads", "hyprarch2")
-	cleanupScript := filepath.Join(home, "src", "Scripts", "cleanup.sh")
-
 	if dryRun {
-		fmt.Printf("Would cleanup %s and maybe run cleanup.sh\n", hyprarchDir)
+		fmt.Printf("Would remove %s\n", hyprarchDir)
 		return
 	}
 	if fileExists(hyprarchDir) {
 		os.RemoveAll(hyprarchDir)
 		fmt.Printf(";; Removed %s\n", hyprarchDir)
 	}
-	if fileExists(cleanupScript) && !skip {
-		runCommand("bash", cleanupScript)
+	if skip {
+		return
 	}
-	if _, err := exec.LookPath("trash-empty"); err == nil {
-		runCommand("trash-empty")
+	cleanupScript := filepath.Join(home, "src", "Scripts", "cleanup.sh")
+	if fileExists(cleanupScript) {
+		runCommand(false, "bash", cleanupScript)
 	}
 }
 
@@ -276,28 +277,27 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "simulate actions without executing")
 	force := flag.Bool("force", false, "force overwrite of files/symlinks")
 	skipWallpaper := flag.Bool("skip-wallpaper", false, "skip wallpaper installation")
-	skipCleanup := flag.Bool("skip-cleanup", false, "skip cleanup.sh and trash-empty")
+	skipCleanup := flag.Bool("skip-cleanup", false, "skip cleanup.sh")
 	flag.Parse()
 
 	home, _ := os.UserHomeDir()
 
-	// Banner
 	printBanner("Installer")
-	fmt.Println("Welcome to hyprarch2")
+	fmt.Println("Welcome to h2install")
 
 	if !promptYesNo("Do you want to start the installation now?") {
 		fmt.Println("Installation cancelled.")
 		return
 	}
 
-	// Pacman config
+	// Pacman bootstrap
 	pacmanConfig := filepath.Join(home, "Downloads", "hyprarch2", "src", "Scripts", "pacman.sh")
 	if fileExists(pacmanConfig) && !*dryRun {
 		printBanner("pacman.sh")
-		runCommand("bash", pacmanConfig)
+		runCommand(false, "bash", pacmanConfig)
 	}
 
-	// AUR helper choice
+	// Choose AUR helper
 	choice := promptChoice("Which AUR helper do you want to install?", []string{"paru", "yay", "cancel"})
 	if choice == "cancel" {
 		fmt.Println(";; Operation canceled.")
@@ -309,14 +309,14 @@ func main() {
 
 	// Wallpapers
 	if !*skipWallpaper {
-		if err := installWallpaper("https://github.com/g5ostXa/wallpaper.git", filepath.Join(home, "wallpaper"), *dryRun); err != nil {
+		if err := installWallpaper("https://github.com/g5ostXa/wallpaper.git", filepath.Join(home, "wallpaper"), *force, *dryRun); err != nil {
 			fmt.Printf("Error installing wallpapers: %v\n", err)
 		}
 	}
 
-	// .bashrc handling
+	// Bashrc
 	newBashrc := filepath.Join(home, "Downloads", "hyprarch2", ".bashrc")
-	if err := backupAndReplaceBashrc(home, newBashrc, *force); err != nil {
+	if err := backupAndReplaceBashrc(home, newBashrc, *force, *dryRun); err != nil {
 		fmt.Printf("Error handling .bashrc: %v\n", err)
 	}
 
@@ -326,6 +326,6 @@ func main() {
 	// Cleanup
 	cleanup(home, *skipCleanup, *dryRun)
 
-	printBanner("hyprarch2")
+	printBanner("h2install")
 	fmt.Println(";; Installation status: COMPLETE")
 }
