@@ -48,7 +48,6 @@ var packages = []string{
 	"neovim",
 	"nautilus",
 	"fastfetch",
-	"pipewire",
 	"pavucontrol",
 	"pulseaudio",
 	"bibata-cursor-theme",
@@ -168,7 +167,7 @@ func backupAndReplaceBashrc(home, newBashrc string, force, dryRun bool) error {
 	return nil
 }
 
-// ===== Wallpapers =====
+// ===== Wallpaper =====
 func installWallpaper(repoURL, dest string, force, dryRun bool) error {
 	fmt.Println(";; Installing wallpapers...")
 	if fileExists(dest) {
