@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // ===== Package List =====
@@ -68,7 +67,6 @@ var packages = []string{
 	"firefox",
 }
 
-// ===== Utility =====
 func runCommand(dryRun bool, name string, args ...string) error {
 	fmt.Printf(">> %s %s\n", name, strings.Join(args, " "))
 	if dryRun {
@@ -106,7 +104,6 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-// ===== Banner =====
 func printBanner(msg string) {
 	if _, err := exec.LookPath("figlet"); err == nil {
 		runCommand(false, "figlet", "-f", "smslant", msg)
@@ -115,7 +112,6 @@ func printBanner(msg string) {
 	}
 }
 
-// ===== Prompts =====
 func promptYesNo(msg string) bool {
 	fmt.Printf("%s (y/n): ", msg)
 	reader := bufio.NewReader(os.Stdin)
@@ -143,26 +139,24 @@ func promptChoice(msg string, choices []string) string {
 }
 
 // ===== Bashrc =====
-func backupAndReplaceBashrc(home, newBashrc string, force, dryRun bool) error {
-	bashrc := filepath.Join(home, ".bashrc")
-	if fileExists(bashrc) {
-		backup := filepath.Join(home, fmt.Sprintf(".bashrc.bak.%s", time.Now().Format("20060102-150405")))
-		if err := copyFile(bashrc, backup, dryRun); err != nil {
-			return fmt.Errorf("backup failed: %w", err)
-		}
-		fmt.Printf(";; Backed up existing .bashrc to %s\n", backup)
-		if !force {
-			fmt.Println(";; Skipping replacement (use --force to overwrite).")
-			return nil
-		}
-	}
-	if !fileExists(newBashrc) {
-		fmt.Println(";; No new .bashrc found, skipping.")
+func installBashrc(home string, dryRun bool) error {
+	src := filepath.Join(home, "Downloads", "hyprarch2", ".bashrc")
+	dst := filepath.Join(home, ".bashrc")
+
+	if !fileExists(src) {
+		fmt.Println(";; No .bashrc found in hyprarch2, skipping.")
 		return nil
 	}
-	if err := copyFile(newBashrc, bashrc, dryRun); err != nil {
-		return fmt.Errorf("install failed: %w", err)
+
+	if dryRun {
+		fmt.Printf("Would copy %s → %s\n", src, dst)
+		return nil
 	}
+
+	if err := copyFile(src, dst, dryRun); err != nil {
+		return fmt.Errorf("failed to install .bashrc: %w", err)
+	}
+
 	fmt.Println(";; Installed new .bashrc successfully.")
 	return nil
 }
@@ -188,35 +182,39 @@ func installWallpaper(repoURL, dest string, force, dryRun bool) error {
 func installPackages(helper string, dryRun bool) error {
 	home, _ := os.UserHomeDir()
 	helperRepo := fmt.Sprintf("https://aur.archlinux.org/%s-bin.git", helper)
-	helperDir := filepath.Join(home, ".cache", "aur", helper+"-bin")
+	helperDir := filepath.Join(home, ".cache", helper+"-bin")
+
 	if dryRun {
 		fmt.Printf("Would install AUR helper %s and packages: %v\n", helper, packages)
 		return nil
 	}
+
 	os.MkdirAll(filepath.Dir(helperDir), 0755)
 	if err := runCommand(false, "git", "clone", "--depth=1", helperRepo, helperDir); err != nil {
 		return err
 	}
 	defer os.RemoveAll(helperDir)
+
 	if err := os.Chdir(helperDir); err != nil {
 		return err
 	}
 	if err := runCommand(false, "makepkg", "-si", "--noconfirm"); err != nil {
 		return err
 	}
+
 	return runCommand(false, helper, append([]string{"-S", "--needed", "--noconfirm"}, packages...)...)
 }
 
 // ===== Symlinks =====
 func createSymlinks(home string, force, dryRun bool) {
 	links := map[string]string{
-		"~/dotfiles/gtk/.Xresources": "~/.Xresources",
-		"~/dotfiles/alacritty":       "~/.config/alacritty",
-		"~/dotfiles/dunst":           "~/.config/dunst",
-		"~/dotfiles/gtk":             "~/.config/gtk",
-		"~/dotfiles/hypr":            "~/.config/hypr",
-		"~/dotfiles/nvim":            "~/.config/nvim",
-		"~/dotfiles/rofi":            "~/.config/rofi",
+		"~/dotfiles/gtk/.Xresources":        "~/.Xresources",
+		"~/dotfiles/alacritty":              "~/.config/alacritty",
+		"~/dotfiles/dunst":                  "~/.config/dunst",
+		"~/dotfiles/gtk":                    "~/.config/gtk",
+		"~/dotfiles/hypr":                   "~/.config/hypr",
+		"~/dotfiles/nvim":                   "~/.config/nvim",
+		"~/dotfiles/rofi":                   "~/.config/rofi",
 		"~/dotfiles/starship/starship.toml": "~/.config/starship.toml",
 		"~/dotfiles/swappy":                 "~/.config/swappy",
 		"~/dotfiles/vim":                    "~/.config/vim",
@@ -229,6 +227,7 @@ func createSymlinks(home string, force, dryRun bool) {
 		"~/dotfiles/waypaper":               "~/.config/waypaper",
 		"~/dotfiles/uwsm":                   "~/.config/uwsm",
 	}
+
 	for src, dst := range links {
 		srcPath := strings.Replace(src, "~", home, 1)
 		dstPath := strings.Replace(dst, "~", home, 1)
@@ -314,8 +313,7 @@ func main() {
 	}
 
 	// Bashrc
-	newBashrc := filepath.Join(home, "Downloads", "hyprarch2", ".bashrc")
-	if err := backupAndReplaceBashrc(home, newBashrc, *force, *dryRun); err != nil {
+	if err := installBashrc(home, *dryRun); err != nil {
 		fmt.Printf("Error handling .bashrc: %v\n", err)
 	}
 
