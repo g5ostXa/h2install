@@ -211,7 +211,7 @@ func installPackages(helper string, dryRun bool) error {
 // ===== Symlinks =====
 func createSymlinks(home string, force, dryRun bool) {
 	links := map[string]string{
-		"~/dotfiles/gtk/.Xresources": "~/Xresources",
+		"~/dotfiles/gtk/.Xresources": "~/.Xresources",
 		"~/dotfiles/alacritty":       "~/.config/alacritty",
 		"~/dotfiles/dunst":           "~/.config/dunst",
 		"~/dotfiles/gtk":             "~/.config/gtk",
