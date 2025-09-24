@@ -63,8 +63,6 @@ var packages = []string{
 	"python-pip",
 	"eza",
 	"swappy",
-	"vscodium-bin",
-	"firefox",
 }
 
 func runCommand(dryRun bool, name string, args ...string) error {
