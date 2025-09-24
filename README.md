@@ -6,7 +6,7 @@
 > - It is still very unstable, even though it works fine for me at the momment.
 > - I recommend running in `--dry-run` mode first.
 
-To do that, edit [`install.sh`](https://github.com/g5ostXa/hyprarch2/src/install.sh) and add `--dry-run` when running the installer like shown below:
+To do that, edit [`install.sh`](https://github.com/g5ostXa/hyprarch2/blob/master/src/install.sh) and add `--dry-run` when running the installer like shown below:
 ```bash
 func_main() {
 	src_check && src_copy && target_check
