@@ -1,9 +1,8 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,8 +59,6 @@ var packages = []string{
 	"python-pip",
 	"eza",
 	"swappy",
-	"vscodium-bin",
-	"firefox",
 }
 
 var symlinks = [][2]string{
@@ -85,7 +82,7 @@ var symlinks = [][2]string{
 	{"dotfiles/uwsm", ".config/uwsm"},
 }
 
-func runCommand(name string, args ...string) error {
+func run(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -109,7 +106,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	return out.Chmod(0644)
+	return out.Chmod(0o644)
 }
 
 func installBashrc(home string) error {
@@ -123,20 +120,15 @@ func installBashrc(home string) error {
 	return copyFile(src, filepath.Join(home, ".bashrc"))
 }
 
-func installWallpaper(dest string) error {
+func installWallpaper(home string) error {
+	dest := filepath.Join(home, "wallpaper")
 	if err := os.RemoveAll(dest); err != nil {
 		return err
 	}
-	const repo = "https://github.com/g5ostXa/wallpaper.git"
-	return runCommand("git", "clone", "--depth=1", repo, dest)
+	return run("git", "clone", "--depth=1", "https://github.com/g5ostXa/wallpaper.git", dest)
 }
 
-func installPackages(helper string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
+func installPackages(home, helper string) error {
 	helperDir := filepath.Join(home, ".cache", helper+"-bin")
 	if err := os.RemoveAll(helperDir); err != nil {
 		return err
@@ -145,8 +137,7 @@ func installPackages(helper string) error {
 		return err
 	}
 
-	repo := "https://aur.archlinux.org/" + helper + "-bin.git"
-	if err := runCommand("git", "clone", "--depth=1", repo, helperDir); err != nil {
+	if err := run("git", "clone", "--depth=1", "https://aur.archlinux.org/"+helper+"-bin.git", helperDir); err != nil {
 		return err
 	}
 	defer os.RemoveAll(helperDir)
@@ -161,18 +152,18 @@ func installPackages(helper string) error {
 		return err
 	}
 
-	if err := runCommand("makepkg", "-si", "--noconfirm"); err != nil {
+	if err := run("makepkg", "-si", "--noconfirm"); err != nil {
 		return err
 	}
 
 	args := append([]string{"-S", "--needed", "--noconfirm"}, packages...)
-	return runCommand(helper, args...)
+	return run(helper, args...)
 }
 
 func createSymlinks(home string) error {
 	for _, pair := range symlinks {
-		src := filepath.Join(home, filepath.FromSlash(pair[0]))
-		dst := filepath.Join(home, filepath.FromSlash(pair[1]))
+		src := filepath.Join(home, pair[0])
+		dst := filepath.Join(home, pair[1])
 
 		if err := os.RemoveAll(dst); err != nil {
 			return err
@@ -184,70 +175,30 @@ func createSymlinks(home string) error {
 	return nil
 }
 
-func cleanup(home string) error {
-	os.RemoveAll(filepath.Join(home, "Downloads", "hyprarch2"))
-
-	script := filepath.Join(home, "src", "Scripts", "cleanup.sh")
-	if _, err := os.Stat(script); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	return runCommand("bash", script)
-}
-
-func runPacman(home string) error {
-	script := filepath.Join(home, "Downloads", "hyprarch2", "src", "Scripts", "pacman.sh")
-	if _, err := os.Stat(script); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	return runCommand("bash", script)
-}
-
 func main() {
-	helper := flag.String("aur-helper", "paru", "AUR helper to use")
-	noWallpaper := flag.Bool("no-wallpaper", false, "skip wallpaper installation")
-	flag.Parse()
-
 	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
-	if err := runPacman(home); err != nil {
-		fmt.Fprintf(os.Stderr, "pacman: %v\n", err)
-		os.Exit(1)
-	}
-
-	if err := installPackages(*helper); err != nil {
-		fmt.Fprintf(os.Stderr, "packages: %v\n", err)
-		os.Exit(1)
-	}
-
-	if !*noWallpaper {
-		if err := installWallpaper(filepath.Join(home, "wallpaper")); err != nil {
-			fmt.Fprintf(os.Stderr, "wallpaper: %v\n", err)
-			os.Exit(1)
+	script := filepath.Join(home, "Downloads", "hyprarch2", "src", "Scripts", "pacman.sh")
+	if _, err := os.Stat(script); err == nil {
+		if err := run("bash", script); err != nil {
+			log.Fatal(err)
 		}
 	}
 
+	if err := installPackages(home, "paru"); err != nil {
+		log.Fatal(err)
+	}
+	if err := installWallpaper(home); err != nil {
+		log.Fatal(err)
+	}
 	if err := installBashrc(home); err != nil {
-		fmt.Fprintf(os.Stderr, "bashrc: %v\n", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
-
 	if err := createSymlinks(home); err != nil {
-		fmt.Fprintf(os.Stderr, "symlinks: %v\n", err)
-		os.Exit(1)
-	}
-
-	if err := cleanup(home); err != nil {
-		fmt.Fprintf(os.Stderr, "cleanup: %v\n", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
+
