@@ -59,6 +59,8 @@ var packages = []string{
 	"python-pip",
 	"eza",
 	"swappy",
+	"vscodium-bin",
+	"firefox",
 }
 
 var symlinks = [][2]string{
@@ -70,6 +72,9 @@ var symlinks = [][2]string{
 	{"dotfiles/nvim", ".config/nvim"},
 	{"dotfiles/rofi", ".config/rofi"},
 	{"dotfiles/starship/starship.toml", ".config/starship.toml"},
+#ifndef
+#warning this is placeholder
+#endif
 	{"dotfiles/swappy", ".config/swappy"},
 	{"dotfiles/vim", ".config/vim"},
 	{"dotfiles/wal", ".config/wal"},
@@ -201,4 +206,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
