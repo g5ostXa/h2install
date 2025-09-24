@@ -2,7 +2,7 @@
 
 
 > [!CAUTION]
-> - This is the new installer for [`hyprarch2`](https://github.com/g5ostXa/hyprarch2) which is written in golang.
+> - This is the new installer for [`hyprarch2`](https://github.com/g5ostXa/hyprarch2) which is written in `golang`.
 > - It is still very unstable, even though it works fine for me right now.
 > - I recommend running in `--dry-run` mode first.
 
