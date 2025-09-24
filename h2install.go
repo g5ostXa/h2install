@@ -41,7 +41,7 @@ var packages = []string{
 	"ttf-fira-code",
 	"ttf-firacode-nerd",
 	"brightnessctl",
-        "neovim",
+    "neovim",
 	"nautilus",
 	"fastfetch",
 	"pavucontrol",
