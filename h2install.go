@@ -59,8 +59,6 @@ var packages = []string{
 	"python-pip",
 	"eza",
 	"swappy",
-	"vscodium-bin",
-	"firefox",
 }
 
 var symlinks = [][2]string{
