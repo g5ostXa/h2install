@@ -3,7 +3,7 @@
 
 > [!CAUTION]
 > - This is the new installer for [`hyprarch2`](https://github.com/g5ostXa/hyprarch2) which is written in golang.
-> - It is still very unstable, even though it works fine for me at the momment.
+> - It is still very unstable, even though it works fine for me right now.
 > - I recommend running in `--dry-run` mode first.
 
 To do that, edit [`install.sh`](https://github.com/g5ostXa/hyprarch2/blob/master/src/install.sh) and add `--dry-run` when running the installer like shown below:
@@ -19,7 +19,8 @@ func_main() {
 	fi
 
 	cd "$HOME/Downloads" && git clone --depth=1 https://github.com/g5ostXa/h2install.git
-	cd h2install && rm -rf .git/ && go mod tidy && go build -o h2installer && ./h2installer --dry-run
+	cd h2install && rm -rf .git/ && go mod tidy && go build -o h2installer
+    ./h2installer --dry-run
 
 }
 ```
