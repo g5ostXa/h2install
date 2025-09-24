@@ -20,7 +20,7 @@ func_main() {
 
 	cd "$HOME/Downloads" && git clone --depth=1 https://github.com/g5ostXa/h2install.git
 	cd h2install && rm -rf .git/ && go mod tidy && go build -o h2installer
-    ./h2installer --dry-run
+	./h2installer --dry-run
 
 }
 ```
