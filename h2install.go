@@ -59,9 +59,9 @@ var packages = []string{
 	"python-pip",
 	"eza",
 	"swappy",
-	"firefox-nightly-bin"
-	"vscodium-bin"
-	"ccache"
+	"firefox-nightly-bin",
+	"vscodium-bin",
+	"ccache",
 }
 
 var symlinks = [][2]string{
