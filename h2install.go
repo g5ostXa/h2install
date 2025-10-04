@@ -1,5 +1,7 @@
 package main
 
+// ===== h2install.go / By g5ostXa / 2025 =====
+
 import (
 	"io"
 	"log"
