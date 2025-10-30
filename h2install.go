@@ -52,7 +52,6 @@ var packages = []string{
 	"dracula-icons-theme",
 	"tokyonight-gtk-theme-git",
 	"python-pywal16",
-	"gtk2",
 	"gtk3",
 	"gtk4",
 	"nwg-look",
