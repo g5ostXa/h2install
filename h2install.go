@@ -68,6 +68,11 @@ var packages = []string{
 	"vscodium-bin",
 	"ccache",
 	"jq",
+	"pacman-contrib",
+	"fzf",
+	"ttf-0xproto-nerd",
+	"bluez",
+	"bluez-utils",
 }
 
 var symlinks = [][2]string{
@@ -210,4 +215,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
