@@ -47,7 +47,7 @@ var packages = []string{
 	"nautilus",
 	"fastfetch",
 	"pavucontrol",
-	"piewire",
+	"pipewire",
 	"pipewire-pulse",
 	"pipewire-alsa",
 	"wireplumber",
