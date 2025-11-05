@@ -1,6 +1,5 @@
+// ===== h2install.go =====
 package main
-
-// ===== h2install.go / By g5ostXa / 2025 =====
 
 import (
 	"io"
