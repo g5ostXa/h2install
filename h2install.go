@@ -70,8 +70,6 @@ var packages = []string{
 	"pacman-contrib",
 	"fzf",
 	"ttf-0xproto-nerd",
-	"bluez",
-	"bluez-utils",
 }
 
 var symlinks = [][2]string{
