@@ -56,7 +56,6 @@ var packages = []string{
 	"python-pywal16",
 	"gtk3",
 	"gtk4",
-	"nwg-look",
 	"swww",
 	"fish",
 	"starship",
