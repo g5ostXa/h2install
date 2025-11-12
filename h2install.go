@@ -30,8 +30,6 @@ var packages = []string{
 	"hyprcursor",
 	"hypridle",
 	"hyprgraphics",
-	"hyprland-qt-support",
-	"hyprland-qtutils",
 	"hyprlang",
 	"hyprls-git",
 	"hyprwayland-scanner",
