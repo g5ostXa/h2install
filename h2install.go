@@ -11,6 +11,7 @@ import (
 
 var packages = []string{
 	"hyprland",
+	"hyprpolkitagent",
 	"uwsm",
 	"alacritty",
 	"aquamarine",
