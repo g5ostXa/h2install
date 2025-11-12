@@ -166,7 +166,7 @@ func installPackages(home, helper string) error {
 		return err
 	}
 
-	args := append([]string{"-S", "--needed"}, packages...)
+	args := append([]string{"-S", "--needed", "--noconfirm"}, packages...)
 	return run(helper, args...)
 }
 
