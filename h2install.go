@@ -49,6 +49,7 @@ var packages = []string{
 	"pipewire",
 	"pipewire-pulse",
 	"pipewire-alsa",
+	"pipewire-jack",
 	"wireplumber",
 	"bibata-cursor-theme",
 	"dracula-icons-theme",
