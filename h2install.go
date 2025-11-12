@@ -162,7 +162,7 @@ func installPackages(home, helper string) error {
 		return err
 	}
 
-	if err := run("makepkg", "-si"); err != nil {
+	if err := run("makepkg", "-si", "--noconfirm"); err != nil {
 		return err
 	}
 
