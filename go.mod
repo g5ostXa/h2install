@@ -1,6 +1,6 @@
 module github.com/g5ostXa/h2install
 
-go 1.25.3
+go 1.25.5
 
 tool golang.org/x/tools/cmd/stringer
 
