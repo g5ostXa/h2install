@@ -197,7 +197,7 @@ func main() {
 		}
 	}
 
-	if err := installPackages(home, "yay"); err != nil {
+	if err := installPackages(home, "paru"); err != nil {
 		log.Fatal(err)
 	}
 	if err := installWallpaper(home); err != nil {
