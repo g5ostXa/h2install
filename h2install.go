@@ -137,19 +137,19 @@ func installWallpaper(home string) error {
 	return run("git", "clone", "--depth=1", "https://github.com/g5ostXa/wallpaper.git", dest)
 }
 
-func installPackages(home, helper string) error {
-	helperDir := filepath.Join(home, ".cache", helper+"-bin")
-	if err := os.RemoveAll(helperDir); err != nil {
+func installParu(home string) error {
+	paruDir := filepath.Join(home, ".cache", "paru")
+	if err := os.RemoveAll(paruDir); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(helperDir), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(paruDir), 0o755); err != nil {
 		return err
 	}
 
-	if err := run("git", "clone", "--depth=1", "https://aur.archlinux.org/"+helper+"-bin.git", helperDir); err != nil {
+	if err := run("git", "clone", "--depth=1", "https://aur.archlinux.org/paru.git", paruDir); err != nil {
 		return err
 	}
-	defer os.RemoveAll(helperDir)
+	defer os.RemoveAll(paruDir)
 
 	prev, err := os.Getwd()
 	if err != nil {
@@ -157,7 +157,7 @@ func installPackages(home, helper string) error {
 	}
 	defer os.Chdir(prev)
 
-	if err := os.Chdir(helperDir); err != nil {
+	if err := os.Chdir(paruDir); err != nil {
 		return err
 	}
 
@@ -166,7 +166,7 @@ func installPackages(home, helper string) error {
 	}
 
 	args := append([]string{"-S", "--needed", "--noconfirm"}, packages...)
-	return run(helper, args...)
+	return run("paru", args...)
 }
 
 func createSymlinks(home string) error {
@@ -197,7 +197,7 @@ func main() {
 		}
 	}
 
-	if err := installPackages(home, "paru"); err != nil {
+	if err := installParu(home); err != nil {
 		log.Fatal(err)
 	}
 	if err := installWallpaper(home); err != nil {
