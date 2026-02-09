@@ -68,6 +68,7 @@ var packages = []string{
 	"pacman-contrib",
 	"fzf",
 	"ttf-0xproto-nerd",
+	"grim",
 }
 
 var symlinks = [][2]string{
