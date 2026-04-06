@@ -13,7 +13,7 @@ var packages = []string{
 	"hyprland",
 	"hyprpolkitagent",
 	"uwsm",
-	"alacritty",
+	"ghostty",
 	"aquamarine",
 	"waybar",
 	"rofi",
