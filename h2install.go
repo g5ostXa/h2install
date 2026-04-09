@@ -69,11 +69,12 @@ var packages = []string{
 	"fzf",
 	"ttf-0xproto-nerd",
 	"grim",
+	"bubblewrap",
 }
 
 var symlinks = [][2]string{
 	{"dotfiles/gtk/.Xresources", ".Xresources"},
-	{"dotfiles/alacritty", ".config/alacritty"},
+	{"dotfiles/ghostty", ".config/ghostty"},
 	{"dotfiles/dunst", ".config/dunst"},
 	{"dotfiles/gtk/", ".config/gtk"},
 	{"dotfiles/hypr", ".config/hypr"},
