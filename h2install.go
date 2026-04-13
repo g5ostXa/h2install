@@ -70,11 +70,13 @@ var packages = []string{
 	"ttf-0xproto-nerd",
 	"grim",
 	"bubblewrap",
+	"btop",
 }
 
 var symlinks = [][2]string{
 	{"dotfiles/gtk/.Xresources", ".Xresources"},
 	{"dotfiles/ghostty", ".config/ghostty"},
+	{"dotfiles/btop", ".config/btop"},
 	{"dotfiles/dunst", ".config/dunst"},
 	{"dotfiles/gtk/", ".config/gtk"},
 	{"dotfiles/hypr", ".config/hypr"},
